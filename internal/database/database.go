@@ -14,6 +14,7 @@ type Database struct {
 
 func GetDB() (*Database, error) {
     password := os.Getenv("MYSQL_PASSWORD")
+	fmt.Println(password)
     if password == "" {
         return nil, fmt.Errorf("MYSQL_PASSWORD environment variable is not set")
     }

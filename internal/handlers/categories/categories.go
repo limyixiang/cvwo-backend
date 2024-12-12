@@ -1,11 +1,11 @@
-package users
+package categories
 
 import (
     "encoding/json"
     "net/http"
 
     "github.com/CVWO/sample-go-app/internal/api"
-    "github.com/CVWO/sample-go-app/internal/dataaccess/users"
+    "github.com/CVWO/sample-go-app/internal/dataaccess/categories"
     "github.com/CVWO/sample-go-app/internal/database"
     "github.com/CVWO/sample-go-app/internal/models"
     "github.com/go-chi/chi/v5"
@@ -20,17 +20,17 @@ func HandleList(w http.ResponseWriter, r *http.Request) {
     }
     defer db.Close()
 
-    userList, err := users.List(db)
+    categoryList, err := categories.List(db)
     if err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve users"), http.StatusInternalServerError)
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve categories"), http.StatusInternalServerError)
         return
     }
 
-    api.WriteResponse(w, userList, http.StatusOK)
+    api.WriteResponse(w, categoryList, http.StatusOK)
 }
 
 func HandleGet(w http.ResponseWriter, r *http.Request) {
-    username := chi.URLParam(r, "username")
+    categoryName := chi.URLParam(r, "name")
 
     db, err := database.GetDB()
     if err != nil {
@@ -39,18 +39,18 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
     }
     defer db.Close()
 
-    user, err := users.GetByName(db, username)
+    category, err := categories.GetByName(db, categoryName)
     if err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve user"), http.StatusInternalServerError)
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve category"), http.StatusInternalServerError)
         return
     }
 
-    api.WriteResponse(w, user, http.StatusOK)
+    api.WriteResponse(w, category, http.StatusOK)
 }
 
 func HandleCreate(w http.ResponseWriter, r *http.Request) {
-    var user models.User
-    if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+    var category models.Category
+    if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
         api.WriteErrorResponse(w, errors.Wrap(err, "failed to decode request body"), http.StatusBadRequest)
         return
     }
@@ -62,19 +62,19 @@ func HandleCreate(w http.ResponseWriter, r *http.Request) {
     }
     defer db.Close()
 
-    if err := users.CreateUser(db, &user); err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to create user"), http.StatusInternalServerError)
+    if err := categories.CreateCategory(db, &category); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to create category"), http.StatusInternalServerError)
         return
     }
 
-    api.WriteResponse(w, user, http.StatusCreated)
+    api.WriteResponse(w, category, http.StatusCreated)
 }
 
 func HandleUpdate(w http.ResponseWriter, r *http.Request) {
-    username := chi.URLParam(r, "username")
+    oldName := chi.URLParam(r, "name")
 
-    var user models.User
-    if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+    var category models.Category
+    if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
         api.WriteErrorResponse(w, errors.Wrap(err, "failed to decode request body"), http.StatusBadRequest)
         return
     }
@@ -86,16 +86,16 @@ func HandleUpdate(w http.ResponseWriter, r *http.Request) {
     }
     defer db.Close()
 
-    if err := users.UpdateUser(db, username, &user); err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to update user"), http.StatusInternalServerError)
+    if err := categories.UpdateCategory(db, category.Name, category.Description, oldName); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to update category"), http.StatusInternalServerError)
         return
     }
 
-    api.WriteResponse(w, user, http.StatusOK)
+    api.WriteResponse(w, category, http.StatusOK)
 }
 
 func HandleDelete(w http.ResponseWriter, r *http.Request) {
-    username := chi.URLParam(r, "username")
+    categoryName := chi.URLParam(r, "name")
 
     db, err := database.GetDB()
     if err != nil {
@@ -104,8 +104,8 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) {
     }
     defer db.Close()
 
-    if err := users.DeleteUser(db, username); err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to delete user"), http.StatusInternalServerError)
+    if err := categories.DeleteCategory(db, categoryName); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to delete category"), http.StatusInternalServerError)
         return
     }
 
