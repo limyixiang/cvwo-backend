@@ -7,6 +7,8 @@ import (
 
     "github.com/CVWO/sample-go-app/internal/database"
     "github.com/CVWO/sample-go-app/internal/router"
+    "github.com/go-chi/chi/v5"
+    "github.com/go-chi/cors"
     _ "github.com/go-sql-driver/mysql"
 )
 
@@ -19,10 +21,23 @@ func main() {
     defer db.Close()
 
     // Set up the router
-    r := router.Setup()
+    r := chi.NewRouter()
+
+    // Enable CORS
+    r.Use(cors.Handler(cors.Options{
+        AllowedOrigins:   []string{"http://localhost:3000"},
+        AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+        ExposedHeaders:   []string{"Link"},
+        AllowCredentials: true,
+        MaxAge:           300, // Maximum value not ignored by any of major browsers
+    }))
+
+    // Set up routes
+    r.Mount("/", router.Setup())
 
     // Get the port from the environment variables or use a default port
-    port := os.Getenv("PORT")
+    port := os.Getenv("MYSQL_PORT")
     if port == "" {
         port = "8080"
     }

@@ -1,6 +1,7 @@
 package users
 
 import (
+    "database/sql"
     "encoding/json"
     "net/http"
 
@@ -41,7 +42,11 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 
     user, err := users.GetByName(db, username)
     if err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve user"), http.StatusInternalServerError)
+        if err == sql.ErrNoRows {
+            api.WriteErrorResponse(w, errors.Wrap(err, "user not found"), http.StatusNotFound)
+        } else {
+            api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve user"), http.StatusInternalServerError)
+        }
         return
     }
 
@@ -62,12 +67,13 @@ func HandleCreate(w http.ResponseWriter, r *http.Request) {
     }
     defer db.Close()
 
-    if err := users.CreateUser(db, &user); err != nil {
+    createdUser, err := users.CreateUser(db, &user)
+    if err != nil {
         api.WriteErrorResponse(w, errors.Wrap(err, "failed to create user"), http.StatusInternalServerError)
         return
     }
 
-    api.WriteResponse(w, user, http.StatusCreated)
+    api.WriteResponse(w, createdUser, http.StatusCreated)
 }
 
 func HandleUpdate(w http.ResponseWriter, r *http.Request) {

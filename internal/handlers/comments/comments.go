@@ -2,8 +2,10 @@ package comments
 
 import (
     "encoding/json"
+    "fmt"
     "net/http"
     "strconv"
+    "time"
 
     "github.com/CVWO/sample-go-app/internal/api"
     "github.com/CVWO/sample-go-app/internal/dataaccess/comments"
@@ -21,6 +23,21 @@ const (
     ErrRetrieveComments           = "Failed to retrieve comments in %s"
     ErrEncodeView                 = "Failed to retrieve comments in %s"
 )
+
+func parseTime(value interface{}) (time.Time, error) {
+    switch v := value.(type) {
+    case time.Time:
+        return v, nil
+    case []uint8:
+        return time.Parse("2006-01-02 15:04:05", string(v))
+    case string:
+        return time.Parse("2006-01-02 15:04:05", v)
+    case nil:
+        return time.Time{}, fmt.Errorf("nil value provided")
+    default:
+        return time.Time{}, fmt.Errorf("unsupported type: %T", v)
+    }
+}
 
 func HandleList(w http.ResponseWriter, r *http.Request) {
     postIDStr := chi.URLParam(r, "postID")

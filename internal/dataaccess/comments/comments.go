@@ -1,6 +1,8 @@
 package comments
 
 import (
+    "time"
+
     "github.com/CVWO/sample-go-app/internal/database"
     "github.com/CVWO/sample-go-app/internal/models"
 )
@@ -15,9 +17,23 @@ func ListByPostID(db *database.Database, postID int) ([]models.Comment, error) {
 
     for rows.Next() {
         var comment models.Comment
-        if err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.CreatedAt, &comment.UpdatedAt); err != nil {
+        var createdAt, updatedAt []uint8
+
+        if err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &createdAt, &updatedAt); err != nil {
             return nil, err
         }
+
+        layout := "2006-01-02 15:04:05"
+        comment.CreatedAt, err = time.Parse(layout, string(createdAt))
+        if err != nil {
+            return nil, err
+        }
+
+        comment.UpdatedAt, err = time.Parse(layout, string(updatedAt))
+        if err != nil {
+            return nil, err
+        }
+
         comments = append(comments, comment)
     }
     return comments, nil
@@ -25,10 +41,24 @@ func ListByPostID(db *database.Database, postID int) ([]models.Comment, error) {
 
 func GetByID(db *database.Database, id int) (*models.Comment, error) {
     var comment models.Comment
-    err := db.QueryRow("SELECT `id`, `post_id`, `user_id`, `content`, `created_at`, `updated_at` FROM `comment` WHERE `id` = ?", id).Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.CreatedAt, &comment.UpdatedAt)
+    var createdAt, updatedAt []uint8
+
+    err := db.QueryRow("SELECT `id`, `post_id`, `user_id`, `content`, `created_at`, `updated_at` FROM `comment` WHERE `id` = ?", id).Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &createdAt, &updatedAt)
     if err != nil {
         return nil, err
     }
+
+    layout := "2006-01-02 15:04:05"
+    comment.CreatedAt, err = time.Parse(layout, string(createdAt))
+    if err != nil {
+        return nil, err
+    }
+
+    comment.UpdatedAt, err = time.Parse(layout, string(updatedAt))
+    if err != nil {
+        return nil, err
+    }
+
     return &comment, nil
 }
 
