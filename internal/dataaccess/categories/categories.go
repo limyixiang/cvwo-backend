@@ -7,7 +7,7 @@ import (
 
 func List(db *database.Database) ([]models.Category, error) {
     var categories []models.Category
-    rows, err := db.Query("SELECT * FROM `categories`")
+    rows, err := db.Query("SELECT * FROM `category`")
     if err != nil {
         return nil, err
     }
@@ -15,7 +15,7 @@ func List(db *database.Database) ([]models.Category, error) {
 
     for rows.Next() {
         var category models.Category
-        if err := rows.Scan(&category.ID, &category.Name, &category.Description); err != nil {
+        if err := rows.Scan(&category.ID, &category.Name); err != nil {
             return nil, err
         }
         categories = append(categories, category)
@@ -25,7 +25,7 @@ func List(db *database.Database) ([]models.Category, error) {
 
 func GetByName(db *database.Database, name string) (*models.Category, error) {
     var category models.Category
-    err := db.QueryRow("SELECT `id`, `name`, `description` FROM `category` WHERE `name` = ?", name).Scan(&category.ID, &category.Name, &category.Description)
+    err := db.QueryRow("SELECT `id`, `name` FROM `category` WHERE `name` = ?", name).Scan(&category.ID, &category.Name)
     if err != nil {
         return nil, err
     }
@@ -33,12 +33,12 @@ func GetByName(db *database.Database, name string) (*models.Category, error) {
 }
 
 func CreateCategory(db *database.Database, category *models.Category) error {
-    _, err := db.Exec("INSERT INTO `category` (`name`, `description`) VALUES (?, ?)", category.Name, category.Description)
+    _, err := db.Exec("INSERT INTO `category` (`name`) VALUES (?)", category.Name)
     return err
 }
 
-func UpdateCategory(db *database.Database, newName string, newDescription string, oldName string) error {
-    _, err := db.Exec("UPDATE `category` SET `name` = ?, `description` = ? WHERE `name` = ?", newName, newDescription, oldName)
+func UpdateCategory(db *database.Database, newName string, oldName string) error {
+    _, err := db.Exec("UPDATE `category` SET `name` = ? WHERE `name` = ?", newName, oldName)
     return err
 }
 

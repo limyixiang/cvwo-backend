@@ -86,7 +86,7 @@ func HandleUpdate(w http.ResponseWriter, r *http.Request) {
     }
     defer db.Close()
 
-    if err := categories.UpdateCategory(db, category.Name, category.Description, oldName); err != nil {
+    if err := categories.UpdateCategory(db, category.Name, oldName); err != nil {
         api.WriteErrorResponse(w, errors.Wrap(err, "failed to update category"), http.StatusInternalServerError)
         return
     }

@@ -7,7 +7,7 @@ import (
 
 func ListByCategoryID(db *database.Database, categoryID int) ([]models.Thread, error) {
     var threads []models.Thread
-    rows, err := db.Query("SELECT `id`, `category_id`, `title`, `user_id`, `created_at`, `updated_at` FROM `thread` WHERE `category_id` = ?", categoryID)
+    rows, err := db.Query("SELECT `id`, `category_id`, `title`, `post_id`, `created_at`, `updated_at` FROM `thread` WHERE `category_id` = ?", categoryID)
     if err != nil {
         return nil, err
     }
@@ -15,7 +15,7 @@ func ListByCategoryID(db *database.Database, categoryID int) ([]models.Thread, e
 
     for rows.Next() {
         var thread models.Thread
-        if err := rows.Scan(&thread.ID, &thread.CategoryID, &thread.Title, &thread.UserID, &thread.CreatedAt, &thread.UpdatedAt); err != nil {
+        if err := rows.Scan(&thread.ID, &thread.CategoryID, &thread.Title, &thread.PostID, &thread.CreatedAt, &thread.UpdatedAt); err != nil {
             return nil, err
         }
         threads = append(threads, thread)
@@ -25,7 +25,7 @@ func ListByCategoryID(db *database.Database, categoryID int) ([]models.Thread, e
 
 func GetByID(db *database.Database, id int) (*models.Thread, error) {
     var thread models.Thread
-    err := db.QueryRow("SELECT `id`, `category_id`, `title`, `user_id`, `created_at`, `updated_at` FROM `thread` WHERE `id` = ?", id).Scan(&thread.ID, &thread.CategoryID, &thread.Title, &thread.UserID, &thread.CreatedAt, &thread.UpdatedAt)
+    err := db.QueryRow("SELECT `id`, `category_id`, `title`, `post_id`, `created_at`, `updated_at` FROM `thread` WHERE `id` = ?", id).Scan(&thread.ID, &thread.CategoryID, &thread.Title, &thread.PostID, &thread.CreatedAt, &thread.UpdatedAt)
     if err != nil {
         return nil, err
     }
@@ -33,7 +33,7 @@ func GetByID(db *database.Database, id int) (*models.Thread, error) {
 }
 
 func CreateThread(db *database.Database, thread *models.Thread) error {
-    _, err := db.Exec("INSERT INTO `thread` (`category_id`, `title`, `user_id`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?)", thread.CategoryID, thread.Title, thread.UserID, thread.CreatedAt, thread.UpdatedAt)
+    _, err := db.Exec("INSERT INTO `thread` (`category_id`, `title`, `post_id`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?)", thread.CategoryID, thread.Title, thread.PostID, thread.CreatedAt, thread.UpdatedAt)
     return err
 }
 
