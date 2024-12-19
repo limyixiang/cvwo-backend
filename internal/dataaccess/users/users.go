@@ -33,6 +33,15 @@ func GetByName(db *database.Database, name string) (*models.User, error) {
 	return &user, nil
 }
 
+func GetByID(db *database.Database, id int) (*models.User, error) {
+	var user models.User
+	err := db.QueryRow("SELECT `id`, `name` FROM `user` WHERE `id` = ?", id).Scan(&user.ID, &user.Name)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func CreateUser(db *database.Database, user *models.User) (*models.User, error) {
 	result, err := db.Exec("INSERT INTO `user` (`name`) VALUES (?)", user.Name)
 	if err != nil {

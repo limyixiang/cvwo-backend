@@ -24,13 +24,6 @@ const (
 )
 
 func HandleList(w http.ResponseWriter, r *http.Request) {
-    threadIDStr := chi.URLParam(r, "threadID")
-    threadID, err := strconv.Atoi(threadIDStr)
-    if err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "invalid thread ID"), http.StatusBadRequest)
-        return
-    }
-
     db, err := database.GetDB()
     if err != nil {
         api.WriteErrorResponse(w, errors.Wrap(err, fmt.Sprintf(ErrRetrieveDatabase, ListPosts)), http.StatusInternalServerError)
@@ -38,7 +31,7 @@ func HandleList(w http.ResponseWriter, r *http.Request) {
     }
     defer db.Close()
 
-    postList, err := posts.ListByThreadID(db, threadID)
+    postList, err := posts.ListPosts(db)
     if err != nil {
         api.WriteErrorResponse(w, errors.Wrap(err, fmt.Sprintf(ErrRetrievePosts, ListPosts)), http.StatusInternalServerError)
         return

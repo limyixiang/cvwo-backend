@@ -4,6 +4,7 @@ import (
     "database/sql"
     "encoding/json"
     "net/http"
+    "strconv"
 
     "github.com/CVWO/sample-go-app/internal/api"
     "github.com/CVWO/sample-go-app/internal/dataaccess/users"
@@ -30,7 +31,7 @@ func HandleList(w http.ResponseWriter, r *http.Request) {
     api.WriteResponse(w, userList, http.StatusOK)
 }
 
-func HandleGet(w http.ResponseWriter, r *http.Request) {
+func HandleGetByName(w http.ResponseWriter, r *http.Request) {
     username := chi.URLParam(r, "username")
 
     db, err := database.GetDB()
@@ -41,6 +42,34 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
     defer db.Close()
 
     user, err := users.GetByName(db, username)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            api.WriteErrorResponse(w, errors.Wrap(err, "user not found"), http.StatusNotFound)
+        } else {
+            api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve user"), http.StatusInternalServerError)
+        }
+        return
+    }
+
+    api.WriteResponse(w, user, http.StatusOK)
+}
+
+func HandleGetByID(w http.ResponseWriter, r *http.Request) {
+    idStr := chi.URLParam(r, "id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "invalid user ID"), http.StatusBadRequest)
+        return
+    }
+
+    db, err := database.GetDB()
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
+        return
+    }
+    defer db.Close()
+
+    user, err := users.GetByID(db, id)
     if err != nil {
         if err == sql.ErrNoRows {
             api.WriteErrorResponse(w, errors.Wrap(err, "user not found"), http.StatusNotFound)

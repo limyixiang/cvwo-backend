@@ -1,13 +1,15 @@
 package posts
 
 import (
+	"time"
+
 	"github.com/CVWO/sample-go-app/internal/database"
 	"github.com/CVWO/sample-go-app/internal/models"
 )
 
-func ListByThreadID(db *database.Database, threadID int) ([]models.Post, error) {
+func ListPosts(db *database.Database) ([]models.Post, error) {
 	var posts []models.Post
-	rows, err := db.Query("SELECT `id`, `thread_id`, `content` FROM `post` WHERE `thread_id` = ?", threadID)
+	rows, err := db.Query("SELECT * FROM `post`")
 	if err != nil {
 		return nil, err
 	}
@@ -15,26 +17,54 @@ func ListByThreadID(db *database.Database, threadID int) ([]models.Post, error) 
 
 	for rows.Next() {
 		var post models.Post
-		err := rows.Scan(&post.ID, &post.ThreadID, &post.Content)
-		if err != nil {
-			return nil, err
-		}
-		posts = append(posts, post)
+        var createdAt, updatedAt []uint8
+
+        err := rows.Scan(&post.ID, &post.UserID, &post.CategoryID, &post.Title, &post.Content, &createdAt, &updatedAt)
+        if err != nil {
+            return nil, err
+        }
+
+        layout := "2006-01-02 15:04:05"
+        post.CreatedAt, err = time.Parse(layout, string(createdAt))
+        if err != nil {
+            return nil, err
+        }
+
+        post.UpdatedAt, err = time.Parse(layout, string(updatedAt))
+        if err != nil {
+            return nil, err
+        }
+
+        posts = append(posts, post)
 	}
 	return posts, nil
 }
 
 func GetByID(db *database.Database, id int) (*models.Post, error) {
 	var post models.Post
-	err := db.QueryRow("SELECT `id`, `thread_id`, `user_id`, `content`, `created_at`, `updated_at` FROM `post` WHERE `id` = ?", id).Scan(&post.ID, &post.ThreadID, &post.UserID, &post.Content, &post.CreatedAt, &post.UpdatedAt)
-	if err != nil {
-		return nil, err
-	}
-	return &post, nil
+    var createdAt, updatedAt []uint8
+
+    err := db.QueryRow("SELECT `id`, `user_id`, `category_id`, `title`, `content`, `created_at`, `updated_at` FROM `post` WHERE `id` = ?", id).Scan(&post.ID, &post.UserID, &post.CategoryID, &post.Title, &post.Content, &createdAt, &updatedAt)
+    if err != nil {
+        return nil, err
+    }
+
+    layout := "2006-01-02 15:04:05"
+    post.CreatedAt, err = time.Parse(layout, string(createdAt))
+    if err != nil {
+        return nil, err
+    }
+
+    post.UpdatedAt, err = time.Parse(layout, string(updatedAt))
+    if err != nil {
+        return nil, err
+    }
+
+    return &post, nil
 }
 
 func CreatePost(db *database.Database, post *models.Post) error {
-    _, err := db.Exec("INSERT INTO `post` (`thread_id`, `user_id`, `content`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?)", post.ThreadID, post.UserID, post.Content, post.CreatedAt, post.UpdatedAt)
+    _, err := db.Exec("INSERT INTO `post` (`user_id`, `category_id`, `title`, `content`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?, ?)", post.UserID, post.CategoryID, post.Title, post.Content, post.CreatedAt, post.UpdatedAt)
     return err
 }
 
