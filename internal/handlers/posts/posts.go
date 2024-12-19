@@ -40,6 +40,30 @@ func HandleList(w http.ResponseWriter, r *http.Request) {
     api.WriteResponse(w, postList, http.StatusOK)
 }
 
+func HandleListByCategory(w http.ResponseWriter, r *http.Request) {
+    categoryIDStr := chi.URLParam(r, "id")
+    categoryID, err := strconv.Atoi(categoryIDStr)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "invalid category ID"), http.StatusBadRequest)
+        return
+    }
+
+    db, err := database.GetDB()
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
+        return
+    }
+    defer db.Close()
+
+    postList, err := posts.ListPostsByCategory(db, categoryID)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve posts"), http.StatusInternalServerError)
+        return
+    }
+
+    api.WriteResponse(w, postList, http.StatusOK)
+}
+
 func HandleGet(w http.ResponseWriter, r *http.Request) {
     postIDStr := chi.URLParam(r, "id")
     postID, err := strconv.Atoi(postIDStr)
