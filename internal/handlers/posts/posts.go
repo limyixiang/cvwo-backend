@@ -5,6 +5,7 @@ import (
     "fmt"
     "net/http"
     "strconv"
+    "time"
 
     "github.com/CVWO/sample-go-app/internal/api"
     "github.com/CVWO/sample-go-app/internal/dataaccess/posts"
@@ -133,6 +134,37 @@ func HandleUpdate(w http.ResponseWriter, r *http.Request) {
     defer db.Close()
 
     if err := posts.UpdatePost(db, &post); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to update post"), http.StatusInternalServerError)
+        return
+    }
+
+    api.WriteResponse(w, post, http.StatusOK)
+}
+
+func HandleUpdateLastUpdated(w http.ResponseWriter, r *http.Request) {
+    postIDStr := chi.URLParam(r, "id")
+    postID, err := strconv.Atoi(postIDStr)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "invalid post ID"), http.StatusBadRequest)
+        return
+    }
+
+    db, err := database.GetDB()
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
+        return
+    }
+    defer db.Close()
+
+    post, err := posts.GetByID(db, postID)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve post"), http.StatusInternalServerError)
+        return
+    }
+
+    post.UpdatedAt = time.Now()
+
+    if err := posts.UpdatePost(db, post); err != nil {
         api.WriteErrorResponse(w, errors.Wrap(err, "failed to update post"), http.StatusInternalServerError)
         return
     }

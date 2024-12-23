@@ -12,12 +12,13 @@ func PostsRoutes() http.Handler {
     r := chi.NewRouter()
 
     // Define post-related routes
-    r.Get("/", posts.HandleList)                        // List all posts
-    r.Get("/category/{id}", posts.HandleListByCategory) // List all posts in a specific category
-    r.Get("/{id}", posts.HandleGet)                     // Get a specific post by ID
-    r.Post("/", posts.HandleCreate)                     // Create a new post
-    r.Put("/{id}", posts.HandleUpdate)                  // Update a specific post by ID
-    r.Delete("/{id}", posts.HandleDelete)               // Delete a specific post by ID
+    r.Get("/", posts.HandleList)                                // List all posts
+    r.Get("/category/{id}", posts.HandleListByCategory)         // List all posts in a specific category
+    r.Get("/{id}", posts.HandleGet)                             // Get a specific post by ID
+    r.Patch("/{id}", posts.HandleUpdateLastUpdated)             // Update the time of a specific post by ID
+    r.Post("/", posts.HandleCreate)                             // Create a new post
+    r.Put("/{id}", posts.HandleUpdate)                          // Update a specific post by ID
+    r.Delete("/{id}", posts.HandleDelete)                       // Delete a specific post by ID
 
     return r
 }
