@@ -102,7 +102,7 @@ func CreatePost(db *database.Database, post *models.Post) error {
 }
 
 func UpdatePost(db *database.Database, post *models.Post) error {
-    _, err := db.Exec("UPDATE `post` SET `content` = ?, `updated_at` = ? WHERE `id` = ?", post.Content, post.UpdatedAt, post.ID)
+    _, err := db.Exec("UPDATE `post` SET `title` = ?, `content` = ?, `updated_at` = ? WHERE `id` = ?", post.Title, post.Content, post.UpdatedAt, post.ID)
     return err
 }
 
