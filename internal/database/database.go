@@ -13,13 +13,23 @@ type Database struct {
 }
 
 func GetDB() (*Database, error) {
-    password := os.Getenv("MYSQL_PASSWORD")
-	fmt.Println(password)
-    if password == "" {
-        return nil, fmt.Errorf("MYSQL_PASSWORD environment variable is not set")
+    // password := os.Getenv("MYSQL_PASSWORD")
+	// fmt.Println(password)
+    // if password == "" {
+    //     return nil, fmt.Errorf("MYSQL_PASSWORD environment variable is not set")
+    // }
+
+    // db, err := sql.Open("mysql", "root:"+password+"@tcp(localhost:3306)/testdb")
+    // if err != nil {
+    //     return nil, fmt.Errorf("error validating sql.Open arguments: %w", err)
+    // }
+
+    dsn := os.Getenv("JAWSDB_URL")
+    if dsn == "" {
+        return nil, fmt.Errorf("JAWSDB_URL environment variable is not set")
     }
 
-    db, err := sql.Open("mysql", "root:"+password+"@tcp(localhost:3306)/testdb")
+    db, err := sql.Open("mysql", dsn)
     if err != nil {
         return nil, fmt.Errorf("error validating sql.Open arguments: %w", err)
     }
