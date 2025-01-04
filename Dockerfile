@@ -22,6 +22,9 @@ FROM alpine:latest
 # Copy the Pre-built binary file from the previous stage
 COPY --from=builder /app/server /server
 
+# Ensure the server binary has execute permissions
+RUN chmod +x /server
+
 # Expose port 8080 to the outside world
 EXPOSE 8080
 
