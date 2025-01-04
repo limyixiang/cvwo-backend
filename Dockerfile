@@ -14,13 +14,13 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN go build -o /server cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server cmd/server/main.go
 
 # Start a new stage from scratch
 FROM alpine:latest
 
 # Copy the Pre-built binary file from the previous stage
-COPY --from=builder /server /server
+COPY --from=builder /app/server /server
 
 # Expose port 8080 to the outside world
 EXPOSE 8080
