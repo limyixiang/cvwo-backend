@@ -39,6 +39,10 @@ func main() {
     // Get the port from the environment variables or use a default port
     port := os.Getenv("MYSQL_PORT")
     if port == "" {
+        port = os.Getenv("PORT")
+    }
+
+    if port == "" {
         port = "8080"
     }
 
