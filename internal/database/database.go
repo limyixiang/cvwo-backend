@@ -24,10 +24,14 @@ func GetDB() (*Database, error) {
     //     return nil, fmt.Errorf("error validating sql.Open arguments: %w", err)
     // }
 
+    // mysql://fdq8lf5t43k2trxc:ur0td788zggb5u3g@l3855uft9zao23e2.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/f0keggdl661acodt
+
     dsn := os.Getenv("JAWSDB_URL")
     if dsn == "" {
         return nil, fmt.Errorf("JAWSDB_URL environment variable is not set")
     }
+
+    fmt.Println("Connecting to database with DSN:", dsn)
 
     db, err := sql.Open("mysql", dsn)
     if err != nil {
