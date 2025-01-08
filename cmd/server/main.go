@@ -25,7 +25,7 @@ func main() {
 
     // Enable CORS
     r.Use(cors.Handler(cors.Options{
-        AllowedOrigins:   []string{"http://localhost:3000"},
+        AllowedOrigins:   []string{"http://localhost:3000", "https://cvwo-frontend-yixiang-d6da5b99ee15.herokuapp.com"},
         AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
         AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
         ExposedHeaders:   []string{"Link"},
