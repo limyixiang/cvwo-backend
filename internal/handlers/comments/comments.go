@@ -161,3 +161,41 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) {
 
     api.WriteResponse(w, nil, http.StatusNoContent)
 }
+
+func HandleLike(w http.ResponseWriter, r *http.Request) {
+    commentIDStr := chi.URLParam(r, "id")
+    commentID, err := strconv.Atoi(commentIDStr)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "invalid comment ID"), http.StatusBadRequest)
+        return
+    }
+
+    var userID struct {
+        UserID int `json:"user_id"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&userID); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to decode request body"), http.StatusBadRequest)
+        return
+    }
+
+    db, err := database.GetDB()
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
+        return
+    }
+    defer db.Close()
+
+    comment, err := comments.GetByID(db, commentID)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve comment"), http.StatusInternalServerError)
+        return
+    }
+
+    comment.LikesUsersID = append(comment.LikesUsersID, userID.UserID)
+    if err := comments.LikeComment(db, commentID, comment.LikesUsersID); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to update comment likes"), http.StatusInternalServerError)
+        return
+    }
+
+    api.WriteResponse(w, comment, http.StatusOK)
+}
