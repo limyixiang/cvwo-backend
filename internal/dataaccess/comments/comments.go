@@ -1,15 +1,16 @@
 package comments
 
 import (
-    "time"
+	"encoding/json"
+	"time"
 
-    "github.com/CVWO/sample-go-app/internal/database"
-    "github.com/CVWO/sample-go-app/internal/models"
+	"github.com/CVWO/sample-go-app/internal/database"
+	"github.com/CVWO/sample-go-app/internal/models"
 )
 
 func ListByPostID(db *database.Database, postID int) ([]models.Comment, error) {
     var comments []models.Comment
-    rows, err := db.Query("SELECT `id`, `post_id`, `user_id`, `content`, `created_at`, `updated_at` FROM `comment` WHERE `post_id` = ?", postID)
+    rows, err := db.Query("SELECT `id`, `post_id`, `user_id`, `content`, `created_at`, `updated_at`, `likes`, `dislikes` FROM `comment` WHERE `post_id` = ?", postID)
     if err != nil {
         return nil, err
     }
@@ -19,7 +20,7 @@ func ListByPostID(db *database.Database, postID int) ([]models.Comment, error) {
         var comment models.Comment
         var createdAt, updatedAt []uint8
 
-        if err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &createdAt, &updatedAt); err != nil {
+        if err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &createdAt, &updatedAt, &comment.Likes, &comment.Dislikes); err != nil {
             return nil, err
         }
 
@@ -43,7 +44,7 @@ func GetByID(db *database.Database, id int) (*models.Comment, error) {
     var comment models.Comment
     var createdAt, updatedAt []uint8
 
-    err := db.QueryRow("SELECT `id`, `post_id`, `user_id`, `content`, `created_at`, `updated_at` FROM `comment` WHERE `id` = ?", id).Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &createdAt, &updatedAt)
+    err := db.QueryRow("SELECT `id`, `post_id`, `user_id`, `content`, `created_at`, `updated_at`, `likes`, `dislikes` FROM `comment` WHERE `id` = ?", id).Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &createdAt, &updatedAt, &comment.Likes, &comment.Dislikes)
     if err != nil {
         return nil, err
     }
@@ -74,5 +75,19 @@ func UpdateComment(db *database.Database, comment *models.Comment) error {
 
 func DeleteComment(db *database.Database, id int) error {
     _, err := db.Exec("DELETE FROM `comment` WHERE `id` = ?", id)
+    return err
+}
+
+func LikeComment(db *database.Database, commentID int, likesUsersID []int) error {
+    _, err := db.Exec("UPDATE `comment` SET `likes` = `likes` + 1 WHERE `id` = ?", commentID)
+    if err != nil {
+        return err
+    }
+
+    likesUsersIDJSON, err := json.Marshal(likesUsersID)
+    if err != nil {
+        return err
+    }
+    _, err = db.Exec("UPDATE `comment` SET `likes_users_id` = ? WHERE `id` = ?", likesUsersIDJSON, commentID)
     return err
 }
