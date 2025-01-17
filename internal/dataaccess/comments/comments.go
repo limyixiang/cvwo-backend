@@ -91,3 +91,95 @@ func LikeComment(db *database.Database, commentID int, likesUsersID []int) error
     _, err = db.Exec("UPDATE `comment` SET `likes_users_id` = ? WHERE `id` = ?", likesUsersIDJSON, commentID)
     return err
 }
+
+func UnlikeComment(db *database.Database, commentID int, likesUsersID []int) error {
+    _, err := db.Exec("UPDATE `comment` SET `likes` = `likes` - 1 WHERE `id` = ?", commentID)
+    if err != nil {
+        return err
+    }
+
+    likesUsersIDJSON, err := json.Marshal(likesUsersID)
+    if err != nil {
+        return err
+    }
+    _, err = db.Exec("UPDATE `comment` SET `likes_users_id` = ? WHERE `id` = ?", likesUsersIDJSON, commentID)
+    return err
+}
+
+func DislikeComment(db *database.Database, commentID int, dislikesUsersID []int) error {
+    _, err := db.Exec("UPDATE `comment` SET `dislikes` = `dislikes` + 1 WHERE `id` = ?", commentID)
+    if err != nil {
+        return err
+    }
+
+    dislikesUsersIDJSON, err := json.Marshal(dislikesUsersID)
+    if err != nil {
+        return err
+    }
+    _, err = db.Exec("UPDATE `comment` SET `dislikes_users_id` = ? WHERE `id` = ?", dislikesUsersIDJSON, commentID)
+    return err
+}
+
+func UndislikeComment(db *database.Database, commentID int, dislikesUsersID []int) error {
+    _, err := db.Exec("UPDATE `comment` SET `dislikes` = `dislikes` - 1 WHERE `id` = ?", commentID)
+    if err != nil {
+        return err
+    }
+
+    dislikesUsersIDJSON, err := json.Marshal(dislikesUsersID)
+    if err != nil {
+        return err
+    }
+    _, err = db.Exec("UPDATE `comment` SET `dislikes_users_id` = ? WHERE `id` = ?", dislikesUsersIDJSON, commentID)
+    return err
+}
+
+func CheckCommentLikedByUser(db *database.Database, commentID, userID int) (bool, error) {
+    var likesUsersIDJSON []byte
+    err := db.QueryRow("SELECT `likes_users_id` FROM `comment` WHERE `id` = ?", commentID).Scan(&likesUsersIDJSON)
+    if err != nil {
+        return false, err
+    }
+
+    if len(likesUsersIDJSON) == 0 {
+        return false, nil
+    }
+
+    var likesUsersID []int
+    if err := json.Unmarshal(likesUsersIDJSON, &likesUsersID); err != nil {
+        return false, err
+    }
+
+    for _, id := range likesUsersID {
+        if id == userID {
+            return true, nil
+        }
+    }
+
+    return false, nil
+}
+
+func CheckCommentDislikedByUser(db *database.Database, commentID, userID int) (bool, error) {
+    var dislikesUsersIDJSON []byte
+    err := db.QueryRow("SELECT `dislikes_users_id` FROM `comment` WHERE `id` = ?", commentID).Scan(&dislikesUsersIDJSON)
+    if err != nil {
+        return false, err
+    }
+
+    if len(dislikesUsersIDJSON) == 0 {
+        return false, nil
+    }
+
+    var dislikesUsersID []int
+    if err := json.Unmarshal(dislikesUsersIDJSON, &dislikesUsersID); err != nil {
+        return false, err
+    }
+
+    for _, id := range dislikesUsersID {
+        if id == userID {
+            return true, nil
+        }
+    }
+
+    return false, nil
+}

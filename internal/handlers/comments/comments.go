@@ -1,18 +1,16 @@
 package comments
 
 import (
-    "encoding/json"
-    "fmt"
-    "net/http"
-    "strconv"
-    "time"
+	"encoding/json"
+	"net/http"
+	"strconv"
 
-    "github.com/CVWO/sample-go-app/internal/api"
-    "github.com/CVWO/sample-go-app/internal/dataaccess/comments"
-    "github.com/CVWO/sample-go-app/internal/database"
-    "github.com/CVWO/sample-go-app/internal/models"
-    "github.com/go-chi/chi/v5"
-    "github.com/pkg/errors"
+	"github.com/CVWO/sample-go-app/internal/api"
+	"github.com/CVWO/sample-go-app/internal/dataaccess/comments"
+	"github.com/CVWO/sample-go-app/internal/database"
+	"github.com/CVWO/sample-go-app/internal/models"
+	"github.com/go-chi/chi/v5"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -23,21 +21,6 @@ const (
     ErrRetrieveComments           = "Failed to retrieve comments in %s"
     ErrEncodeView                 = "Failed to retrieve comments in %s"
 )
-
-func parseTime(value interface{}) (time.Time, error) {
-    switch v := value.(type) {
-    case time.Time:
-        return v, nil
-    case []uint8:
-        return time.Parse("2006-01-02 15:04:05", string(v))
-    case string:
-        return time.Parse("2006-01-02 15:04:05", v)
-    case nil:
-        return time.Time{}, fmt.Errorf("nil value provided")
-    default:
-        return time.Time{}, fmt.Errorf("unsupported type: %T", v)
-    }
-}
 
 func HandleList(w http.ResponseWriter, r *http.Request) {
     postIDStr := chi.URLParam(r, "postID")
@@ -198,4 +181,192 @@ func HandleLike(w http.ResponseWriter, r *http.Request) {
     }
 
     api.WriteResponse(w, comment, http.StatusOK)
+}
+
+func HandleUnlike(w http.ResponseWriter, r *http.Request) {
+    commentIDStr := chi.URLParam(r, "id")
+    commentID, err := strconv.Atoi(commentIDStr)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "invalid comment ID"), http.StatusBadRequest)
+        return
+    }
+
+    var userID struct {
+        UserID int `json:"user_id"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&userID); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to decode request body"), http.StatusBadRequest)
+        return
+    }
+
+    db, err := database.GetDB()
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
+        return
+    }
+    defer db.Close()
+
+    comment, err := comments.GetByID(db, commentID)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve comment"), http.StatusInternalServerError)
+        return
+    }
+
+    for i, id := range comment.LikesUsersID {
+        if id == userID.UserID {
+            comment.LikesUsersID = append(comment.LikesUsersID[:i], comment.LikesUsersID[i+1:]...)
+            break
+        }
+    }
+
+    if err := comments.UnlikeComment(db, commentID, comment.LikesUsersID); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to update comment likes"), http.StatusInternalServerError)
+        return
+    }
+
+    api.WriteResponse(w, comment, http.StatusOK)
+}
+
+func HandleDislike(w http.ResponseWriter, r *http.Request) {
+    commentIDStr := chi.URLParam(r, "id")
+    commentID, err := strconv.Atoi(commentIDStr)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "invalid comment ID"), http.StatusBadRequest)
+        return
+    }
+
+    var userID struct {
+        UserID int `json:"user_id"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&userID); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to decode request body"), http.StatusBadRequest)
+        return
+    }
+
+    db, err := database.GetDB()
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
+        return
+    }
+    defer db.Close()
+
+    comment, err := comments.GetByID(db, commentID)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve comment"), http.StatusInternalServerError)
+        return
+    }
+
+    comment.DislikesUsersID = append(comment.DislikesUsersID, userID.UserID)
+    if err := comments.DislikeComment(db, commentID, comment.DislikesUsersID); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to update comment dislikes"), http.StatusInternalServerError)
+        return
+    }
+
+    api.WriteResponse(w, comment, http.StatusOK)
+}
+
+func HandleUndislike(w http.ResponseWriter, r *http.Request) {
+    commentIDStr := chi.URLParam(r, "id")
+    commentID, err := strconv.Atoi(commentIDStr)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "invalid comment ID"), http.StatusBadRequest)
+        return
+    }
+
+    var userID struct {
+        UserID int `json:"user_id"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&userID); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to decode request body"), http.StatusBadRequest)
+        return
+    }
+
+    db, err := database.GetDB()
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
+        return
+    }
+    defer db.Close()
+
+    comment, err := comments.GetByID(db, commentID)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve comment"), http.StatusInternalServerError)
+        return
+    }
+
+    for i, id := range comment.DislikesUsersID {
+        if id == userID.UserID {
+            comment.DislikesUsersID = append(comment.DislikesUsersID[:i], comment.DislikesUsersID[i+1:]...)
+            break
+        }
+    }
+
+    if err := comments.UndislikeComment(db, commentID, comment.DislikesUsersID); err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to update comment dislikes"), http.StatusInternalServerError)
+        return
+    }
+
+    api.WriteResponse(w, comment, http.StatusOK)
+}
+
+func HandleCheckLikedByUser(w http.ResponseWriter, r *http.Request) {
+    commentIDStr := chi.URLParam(r, "id")
+    commentID, err := strconv.Atoi(commentIDStr)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "invalid comment ID"), http.StatusBadRequest)
+        return
+    }
+
+    userIDStr := chi.URLParam(r, "userID")
+    userID, err := strconv.Atoi(userIDStr)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "invalid user ID"), http.StatusBadRequest)
+        return
+    }
+
+    db, err := database.GetDB()
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
+        return
+    }
+    defer db.Close()
+
+    liked, err := comments.CheckCommentLikedByUser(db, commentID, userID)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to check if comment is liked by user"), http.StatusInternalServerError)
+        return
+    }
+
+    api.WriteResponse(w, liked, http.StatusOK)
+}
+
+func HandleCheckDislikedByUser(w http.ResponseWriter, r *http.Request) {
+    commentIDStr := chi.URLParam(r, "id")
+    commentID, err := strconv.Atoi(commentIDStr)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "invalid comment ID"), http.StatusBadRequest)
+        return
+    }
+
+    userIDStr := chi.URLParam(r, "userID")
+    userID, err := strconv.Atoi(userIDStr)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "invalid user ID"), http.StatusBadRequest)
+        return
+    }
+
+    db, err := database.GetDB()
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
+        return
+    }
+    defer db.Close()
+
+    disliked, err := comments.CheckCommentDislikedByUser(db, commentID, userID)
+    if err != nil {
+        api.WriteErrorResponse(w, errors.Wrap(err, "failed to check if comment is disliked by user"), http.StatusInternalServerError)
+        return
+    }
+
+    api.WriteResponse(w, disliked, http.StatusOK)
 }
