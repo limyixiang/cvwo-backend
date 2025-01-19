@@ -12,102 +12,77 @@ import (
     "github.com/pkg/errors"
 )
 
-func HandleList(w http.ResponseWriter, r *http.Request) {
-    db, err := database.GetDB()
-    if err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
-        return
-    }
-    defer db.Close()
+func HandleList(db *database.Database) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        categoryList, err := categories.List(db)
+        if err != nil {
+            api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve categories"), http.StatusInternalServerError)
+            return
+        }
 
-    categoryList, err := categories.List(db)
-    if err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve categories"), http.StatusInternalServerError)
-        return
+        api.WriteResponse(w, categoryList, http.StatusOK)
     }
-
-    api.WriteResponse(w, categoryList, http.StatusOK)
 }
 
-func HandleGet(w http.ResponseWriter, r *http.Request) {
-    categoryName := chi.URLParam(r, "name")
+func HandleGet(db *database.Database) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        categoryName := chi.URLParam(r, "name")
 
-    db, err := database.GetDB()
-    if err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
-        return
+        category, err := categories.GetByName(db, categoryName)
+        if err != nil {
+            api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve category"), http.StatusInternalServerError)
+            return
+        }
+
+        api.WriteResponse(w, category, http.StatusOK)
     }
-    defer db.Close()
-
-    category, err := categories.GetByName(db, categoryName)
-    if err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve category"), http.StatusInternalServerError)
-        return
-    }
-
-    api.WriteResponse(w, category, http.StatusOK)
 }
 
-func HandleCreate(w http.ResponseWriter, r *http.Request) {
-    var category models.Category
-    if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to decode request body"), http.StatusBadRequest)
-        return
-    }
+func HandleCreate(db *database.Database) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        var category models.Category
+        if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
+            api.WriteErrorResponse(w, errors.Wrap(err, "failed to decode request body"), http.StatusBadRequest)
+            return
+        }
 
-    db, err := database.GetDB()
-    if err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
-        return
-    }
-    defer db.Close()
+        if err := categories.CreateCategory(db, &category); err != nil {
+            api.WriteErrorResponse(w, errors.Wrap(err, "failed to create category"), http.StatusInternalServerError)
+            return
+        }
 
-    if err := categories.CreateCategory(db, &category); err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to create category"), http.StatusInternalServerError)
-        return
+        api.WriteResponse(w, category, http.StatusCreated)
     }
-
-    api.WriteResponse(w, category, http.StatusCreated)
 }
 
-func HandleUpdate(w http.ResponseWriter, r *http.Request) {
-    oldName := chi.URLParam(r, "name")
+func HandleUpdate(db *database.Database) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        oldName := chi.URLParam(r, "name")
 
-    var category models.Category
-    if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to decode request body"), http.StatusBadRequest)
-        return
+        var category models.Category
+        if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
+            api.WriteErrorResponse(w, errors.Wrap(err, "failed to decode request body"), http.StatusBadRequest)
+            return
+        }
+
+        if err := categories.UpdateCategory(db, category.Name, oldName); err != nil {
+            api.WriteErrorResponse(w, errors.Wrap(err, "failed to update category"), http.StatusInternalServerError)
+            return
+        }
+
+        api.WriteResponse(w, category, http.StatusOK)
     }
-
-    db, err := database.GetDB()
-    if err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
-        return
-    }
-    defer db.Close()
-
-    if err := categories.UpdateCategory(db, category.Name, oldName); err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to update category"), http.StatusInternalServerError)
-        return
-    }
-
-    api.WriteResponse(w, category, http.StatusOK)
 }
 
-func HandleDelete(w http.ResponseWriter, r *http.Request) {
-    categoryName := chi.URLParam(r, "name")
+func HandleDelete(db *database.Database) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        categoryName := chi.URLParam(r, "name")
 
-    db, err := database.GetDB()
-    if err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve database"), http.StatusInternalServerError)
-        return
+        if err := categories.DeleteCategory(db, categoryName); err != nil {
+            api.WriteErrorResponse(w, errors.Wrap(err, "failed to delete category"), http.StatusInternalServerError)
+            return
+        }
+
+        api.WriteResponse(w, nil, http.StatusNoContent)
     }
-    defer db.Close()
-
-    if err := categories.DeleteCategory(db, categoryName); err != nil {
-        api.WriteErrorResponse(w, errors.Wrap(err, "failed to delete category"), http.StatusInternalServerError)
-        return
-    }
-
-    api.WriteResponse(w, nil, http.StatusNoContent)
 }

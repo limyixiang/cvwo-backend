@@ -34,7 +34,7 @@ func main() {
     }))
 
     // Set up routes
-    r.Mount("/", router.Setup())
+    r.Mount("/", router.Setup(db))
 
     // Get the port from the environment variables or use a default port
     port := os.Getenv("MYSQL_PORT")
