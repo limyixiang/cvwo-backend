@@ -37,7 +37,8 @@ func main() {
     r.Mount("/", router.Setup(db))
 
     // Get the port from the environment variables or use a default port
-    port := os.Getenv("MYSQL_PORT")
+    // port := os.Getenv("MYSQL_PORT")
+    port := os.Getenv("PORT")
     if port == "" {
         port = "8080" // Default port if not set
     }
