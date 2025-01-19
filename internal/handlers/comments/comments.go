@@ -143,6 +143,18 @@ func HandleLike(db *database.Database) http.HandlerFunc {
             return
         }
 
+        // Check if user has already disliked the comment
+        for i, id := range comment.DislikesUsersID {
+            if id == userID.UserID {
+                comment.DislikesUsersID = append(comment.DislikesUsersID[:i], comment.DislikesUsersID[i+1:]...)
+                if err := comments.UndislikeComment(db, commentID, comment.DislikesUsersID); err != nil {
+                    api.WriteErrorResponse(w, errors.Wrap(err, "failed to update comment dislikes"), http.StatusInternalServerError)
+                    return
+                }
+                break
+            }
+        }
+
         comment.LikesUsersID = append(comment.LikesUsersID, userID.UserID)
         if err := comments.LikeComment(db, commentID, comment.LikesUsersID); err != nil {
             api.WriteErrorResponse(w, errors.Wrap(err, "failed to update comment likes"), http.StatusInternalServerError)
@@ -213,6 +225,18 @@ func HandleDislike(db *database.Database) http.HandlerFunc {
         if err != nil {
             api.WriteErrorResponse(w, errors.Wrap(err, "failed to retrieve comment"), http.StatusInternalServerError)
             return
+        }
+
+        // Check if user has already liked the comment
+        for i, id := range comment.LikesUsersID {
+            if id == userID.UserID {
+                comment.LikesUsersID = append(comment.LikesUsersID[:i], comment.LikesUsersID[i+1:]...)
+                if err := comments.UnlikeComment(db, commentID, comment.LikesUsersID); err != nil {
+                    api.WriteErrorResponse(w, errors.Wrap(err, "failed to update comment likes"), http.StatusInternalServerError)
+                    return
+                }
+                break
+            }
         }
 
         comment.DislikesUsersID = append(comment.DislikesUsersID, userID.UserID)
