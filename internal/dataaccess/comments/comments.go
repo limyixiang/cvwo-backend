@@ -20,7 +20,8 @@ func ListByPostID(db *database.Database, postID int) ([]models.Comment, error) {
         var comment models.Comment
         var createdAt, updatedAt []uint8
 
-        if err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &createdAt, &updatedAt, &comment.Likes, &comment.Dislikes); err != nil {
+        err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &createdAt, &updatedAt, &comment.Likes, &comment.Dislikes);
+        if err != nil {
             return nil, err
         }
 
